@@ -136,8 +136,8 @@ int Check_Grid(const int *Fp){
     {
         
         vertical_result = Vertical_Check();//縦の確認
-        //side_result     = Side_check();//横の確認
-        //diagonal_result = Diagonal_Check();//斜めの確認
+        side_result     = Side_check();//横の確認
+        diagonal_result = Diagonal_Check();//斜めの確認
         Print_Field();
     }
     if((vertical_result==TRUE)||(side_result==TRUE)||(diagonal_result==TRUE))
@@ -194,9 +194,9 @@ int Vertical_Check(){
     else
     {
         sand_fp = &(Field[Gyo][Retu]);
-        sand_fp -= 8;
         for(i=1;i<cnt;i++)
         {
+            sand_fp -= 8;
             if(Turn_Flg==BLACK)
             {
                 *sand_fp = BLACK;
@@ -214,6 +214,7 @@ int Vertical_Check(){
     /**********************************************************/
     //下方向の確認
     sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    cnt = 0;//cnt初期化
     for(i=Gyo+1;i<8;i++)
     {
         sand_OKflg  = FALSE;
@@ -249,9 +250,10 @@ int Vertical_Check(){
     else
     {
         sand_fp = &(Field[Gyo][Retu]);
-        sand_fp += 8;
+        
         for(i=1;i<cnt;i++)
         {
+            sand_fp += 8;
             if(Turn_Flg==BLACK)
             {
                 *sand_fp = BLACK;
@@ -272,8 +274,354 @@ int Vertical_Check(){
 横方向の石が変えられるかチェックし、変えられる場合は石を変える
 ********************************************************/
 int Side_check(){
-    int chg_OKflg;
+    int chg_OKflg=FALSE,i,cnt=0;
+    int *sand_fp;
+    int sand_OKflg = FALSE;
+        
+    //左方向の確認
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    for(i=Retu-1;i>=0;i--)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp -= 1;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
 
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
+    /*左方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp -= 1;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
+
+    /**********************************************************/
+    //右方向の確認
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    cnt = 0;//cnt初期化
+    for(i=Retu+1;i<8;i++)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp += 1;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
+
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
+    /*右方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp += 1;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
+    return chg_OKflg;
+}
+/***************************************************
+斜めのチェック
+****************************************************/
+int Diagonal_Check(){
+    int chg_OKflg=FALSE,i,cnt=0;
+    int *sand_fp;
+    int sand_OKflg = FALSE;
+
+    /**右斜め上のチェック**/
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    for(i=Gyo-1;i>=0;i--)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp -= 7;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
+
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
     
+    /*右斜め上方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp -= 7;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
+
+    /**左斜め上のチェック*******************************************/
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    cnt = 0;
+    for(i=Gyo-1;i>=0;i--)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp -= 9;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
+
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
+    /*左斜め上方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp -= 9;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
+
+    /**右斜め下のチェック*******************************************/
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    cnt = 0;
+    for(i=Gyo+1;i<8;i++)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp += 9;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
+
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
+    /*右斜め下方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp += 9;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
+
+    /**左斜め下のチェック*******************************************/
+    sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
+    cnt = 0;
+    for(i=Gyo+1;i<8;i++)
+    {
+        sand_OKflg  = FALSE;
+        sand_fp += 7;
+        cnt++;
+        if(*sand_fp==NONE)//石がなかったら終了
+        {
+            break;
+        }
+
+        if(Turn_Flg==BLACK)
+        {
+            if(*sand_fp==BLACK)
+            {
+                sand_OKflg = TRUE;
+                break;//黒のターンで黒を検出したらbreak
+            }
+        }
+        else//if(Turn_Flg==WHITE)
+        {
+            if(*sand_fp==WHITE)
+            {
+                sand_OKflg = TRUE;
+                break;//白のターンで白を検出したらbreak
+            }
+        }
+    }
+    /*左斜め下方向の石の色を変える*/
+    if((cnt == 1)||(sand_OKflg == FALSE))//cntが1の場合,sand_OKflgがTRUEの場合はなにもしない
+    {
+        //chg_OKflgはFALSEのままのためなにもしない
+    }
+    else
+    {
+        sand_fp = &(Field[Gyo][Retu]);
+        for(i=1;i<cnt;i++)
+        {
+            sand_fp += 7;
+            if(Turn_Flg==BLACK)
+            {
+                *sand_fp = BLACK;
+                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+            }
+            else
+            {
+                *sand_fp = WHITE;
+                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+            }
+        }
+        chg_OKflg = TRUE;//石を置くことが可能
+        Print_Field();//デバッグ用
+    }
     return chg_OKflg;
 }
