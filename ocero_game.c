@@ -15,6 +15,8 @@ int Vertical_Check();//縦方向の石を変えられるかチェック
 int Side_check();//横方向の石を変えられるかチェック
 int Diagonal_Check();//斜め方向の石を変えられるかチェック
 void Judge_Winner();//勝者の判定
+void Change_Stone(int ,int *);//石を変える
+int Break_Judge(int ,int *);//breakするかの判定
 /*定数*/
 #define WIDTH 8
 #define HEIGHT 8
@@ -23,20 +25,47 @@ void Judge_Winner();//勝者の判定
 #define BLACK 2
 #define TRUE 1
 #define FALSE 0
-
+/*マクロ*/
+#define CHG_TURN_FLG(Turn_Flg) (Turn_Flg == BLACK ? WHITE : BLACK)
 /*グローバル変数宣言*/
 int Field[HEIGHT][WIDTH];
 int Gyo,Retu;
 int Turn_Flg = BLACK;//先行は黒
-
+int Stone_Cnt = 4;//初期値は4,MAX64
 int main(){
     int *Fp;
     int result;
 
     Init_Field();
-    Print_Field();
-    Fp = Select_Grid();
-    result = Check_Grid(Fp);
+    while(Stone_Cnt<64)
+    {
+        Print_Field();
+        if(Turn_Flg == BLACK)
+        {
+            puts("黒のターンです");
+        }
+        else
+        {
+            puts("白のターンです");
+        }
+        
+        Fp = Select_Grid();
+        result = Check_Grid(Fp);
+        if(FALSE == result)
+        {
+            puts("石を置けません！もう一度入力してください");
+            puts("ENTERを押してください");
+            while(getchar() != '\n');//bufferクリア
+            system("cls");
+            continue;
+        }
+        else
+        {
+            Stone_Cnt++;//石の数を加算
+            Turn_Flg = CHG_TURN_FLG(Turn_Flg);
+        }
+        system("cls");
+    }
     return 0;
 }
 
@@ -62,9 +91,11 @@ void Init_Field(){
 ******************************************/
 void Print_Field(){
     int i,j;
+    printf("   0  1  2  3  4  5  6  7 \n");//座標番号
     for(i=0;i<HEIGHT;i++)
-    {
-        printf("------------------------\n");
+    {   
+        printf("--------------------------\n");
+        printf("%d|",i);//座標番号
         for(j=0;j<WIDTH;j++)
         {
             if(Field[i][j] == NONE)
@@ -82,7 +113,7 @@ void Print_Field(){
         }
         printf("\n");
     }
-    printf("------------------------\n");
+    printf("--------------------------\n");
 }
 /************************************************
 マスを選択する
@@ -90,9 +121,9 @@ void Print_Field(){
 int* Select_Grid(){
     int *Fp;
     char x,y;
-    int flg = TRUE;
+    int loop_flg = TRUE;
     /*有効な入力があるまでループ*/
-    while(flg)//無限ループ
+    while(loop_flg)//無限ループ
     {
         puts("X座標を入力してください:0～7");
         scanf("%c",&x);
@@ -104,7 +135,7 @@ int* Select_Grid(){
         
         if(('0'<=x && x<='7')&&('0'<=y && y<='7'))
         {
-            flg = FALSE;
+            loop_flg = FALSE;//有効な入力
         }
         else
         {
@@ -112,7 +143,6 @@ int* Select_Grid(){
         }
         
     }
-    //printf("%c %c",x,y);
     Gyo = x - '0';//X座標の保存
     Retu = y - '0';//Ｙ座標の保存
     Fp = &(Field[(x - '0')][(y - '0')]);//選択したマスのポインタ
@@ -138,11 +168,10 @@ int Check_Grid(const int *Fp){
         vertical_result = Vertical_Check();//縦の確認
         side_result     = Side_check();//横の確認
         diagonal_result = Diagonal_Check();//斜めの確認
-        Print_Field();
     }
     if((vertical_result==TRUE)||(side_result==TRUE)||(diagonal_result==TRUE))
     {
-        return TRUE;//石を変えることができる
+        return TRUE;//石が置ける
     }
     else
     {
@@ -156,6 +185,7 @@ int Vertical_Check(){
     int chg_OKflg=FALSE,i,cnt=0;
     int *sand_fp;
     int sand_OKflg = FALSE;
+    int b_result;
         
     //上方向の確認
     sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
@@ -169,21 +199,11 @@ int Vertical_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*上方向の石の色を変える*/
@@ -197,19 +217,9 @@ int Vertical_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp -= 8;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
     /**********************************************************/
     //下方向の確認
@@ -225,21 +235,11 @@ int Vertical_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*下方向の石の色を変える*/
@@ -254,19 +254,9 @@ int Vertical_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp += 8;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
     return chg_OKflg;
 }
@@ -277,7 +267,7 @@ int Side_check(){
     int chg_OKflg=FALSE,i,cnt=0;
     int *sand_fp;
     int sand_OKflg = FALSE;
-        
+    int b_result;
     //左方向の確認
     sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
     for(i=Retu-1;i>=0;i--)
@@ -290,21 +280,11 @@ int Side_check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*左方向の石の色を変える*/
@@ -318,19 +298,9 @@ int Side_check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp -= 1;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
 
     /**********************************************************/
@@ -347,21 +317,11 @@ int Side_check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*右方向の石の色を変える*/
@@ -376,19 +336,9 @@ int Side_check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp += 1;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
     return chg_OKflg;
 }
@@ -399,7 +349,7 @@ int Diagonal_Check(){
     int chg_OKflg=FALSE,i,cnt=0;
     int *sand_fp;
     int sand_OKflg = FALSE;
-
+    int b_result;
     /**右斜め上のチェック**/
     sand_fp = &(Field[Gyo][Retu]);//選択したマスのポインタ
     for(i=Gyo-1;i>=0;i--)
@@ -412,21 +362,11 @@ int Diagonal_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     
@@ -441,19 +381,9 @@ int Diagonal_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp -= 7;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
 
     /**左斜め上のチェック*******************************************/
@@ -469,21 +399,11 @@ int Diagonal_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*左斜め上方向の石の色を変える*/
@@ -497,19 +417,9 @@ int Diagonal_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp -= 9;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
 
     /**右斜め下のチェック*******************************************/
@@ -525,21 +435,11 @@ int Diagonal_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*右斜め下方向の石の色を変える*/
@@ -553,19 +453,9 @@ int Diagonal_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp += 9;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
+            Change_Stone(Turn_Flg,  sand_fp);
         }
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
 
     /**左斜め下のチェック*******************************************/
@@ -581,21 +471,11 @@ int Diagonal_Check(){
             break;
         }
 
-        if(Turn_Flg==BLACK)
+        b_result = Break_Judge(Turn_Flg,sand_fp);
+        if(b_result==TRUE)
         {
-            if(*sand_fp==BLACK)
-            {
-                sand_OKflg = TRUE;
-                break;//黒のターンで黒を検出したらbreak
-            }
-        }
-        else//if(Turn_Flg==WHITE)
-        {
-            if(*sand_fp==WHITE)
-            {
-                sand_OKflg = TRUE;
-                break;//白のターンで白を検出したらbreak
-            }
+            sand_OKflg = TRUE;
+            break;
         }
     }
     /*左斜め下方向の石の色を変える*/
@@ -609,19 +489,45 @@ int Diagonal_Check(){
         for(i=1;i<cnt;i++)
         {
             sand_fp += 7;
-            if(Turn_Flg==BLACK)
-            {
-                *sand_fp = BLACK;
-                Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
-            }
-            else
-            {
-                *sand_fp = WHITE;
-                Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
-            }
-        }
+            Change_Stone(Turn_Flg,  sand_fp);
+        } 
         chg_OKflg = TRUE;//石を置くことが可能
-        Print_Field();//デバッグ用
     }
     return chg_OKflg;
+}
+/**********************************************************
+石を変える関数
+**********************************************************/
+void Change_Stone(int Turn_Flg,int *Fp){
+    if(Turn_Flg==BLACK)
+    {
+        *Fp = BLACK;
+        Field[Gyo][Retu] = BLACK;//選択したマスに石を置く
+    }
+    else
+    {
+        *Fp = WHITE;
+        Field[Gyo][Retu] = WHITE;//選択したマスに石を置く
+    }
+}
+/*********************************************************
+breakするか判定する関数
+*********************************************************/
+int Break_Judge(int Turn_Flg,int *Fp){
+    int judge = FALSE;
+    if(Turn_Flg==BLACK)
+    {
+        if(*Fp==BLACK)
+        {
+            judge = TRUE;//黒のターンで黒を検出したらbreak
+        }
+    }
+    else//if(Turn_Flg==WHITE)
+    {
+        if(*Fp==WHITE)
+        {
+            judge = TRUE;//白のターンで白を検出したらbreak
+        }
+    }
+    return judge;
 }
